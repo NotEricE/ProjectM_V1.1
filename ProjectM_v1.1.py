@@ -86,15 +86,25 @@ def box_f_id(url_link):
     try:
         folder_info = client.folders.get_folder_items(folder_id=f"{url[33:]}")
         mini_folder = folder_info.entries
-        for f in mini_folder:
-            name = f.name
-            file_id = f.id
+        for folder in mini_folder:
+            name = folder.name
+            file_id = folder.id
             box_file = {"name": name, "id": file_id}
-            return box_file
-            # i = client.shared_links_folders.find_folder_for_shared_link("".join([ f"shared_link={url}" ]))
-            # print(i.name)
-    except BoxAPIError as e:
-        print(f"Not a valid link link \n{e}")
+            if not box_file["name"].endswith(".ai"):
+                box_download(box_file)
+    except BoxAPIError:
+        print(f"Not a valid folder link")
+    try:
+        i = client.shared_links_folders.find_folder_for_shared_link("".join([ f"shared_link={url}" ]))
+        ito = i.id
+        folder_info2 = client.folders.get_folder_items(folder_id=ito)
+        mini_folder2 = folder_info2.entries
+        for folder2 in mini_folder2:
+            box_file = {"name": folder2.name, "id": folder2.id}
+            if not box_file["name"].endswith(".ai"):
+                box_download(box_file)
+    except BoxAPIError as d:
+        print(f"Not s valid shared link \n{d}")
 
 # Downloads the box file and saves it to the donwload folder
 def box_download(url):
@@ -103,7 +113,7 @@ def box_download(url):
     client = box_auth()
     try:
         file = client.downloads.download_file(file_id=file_id)
-        dwn_pt = "C:/Users/IT/Downloads/"
+        dwn_pt = "C:/Users/Public/Downloads/"
         full_pt = dwn_pt + file_name
         convert = file.read()
         with open(f"{full_pt}", "wb") as f:
@@ -131,8 +141,7 @@ def main():
                 break
             t = mon_columns(first, second)
             url = b_link(t)
-            box_id = box_f_id(url)
-            box_download(box_id)
+            box_f_id(url)
         # air_table()
                 
 
