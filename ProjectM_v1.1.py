@@ -80,8 +80,7 @@ def box_auth():
     return client
 
 # Gets the file id from box to prepare for a download
-def box_f_id(url_link):
-    client = box_auth()
+def box_f_id(url_link, client):
     url = f"{url_link}"
     try:
         folder_info = client.folders.get_folder_items(folder_id=f"{url[33:]}")
@@ -91,7 +90,7 @@ def box_f_id(url_link):
             file_id = folder.id
             box_file = {"name": name, "id": file_id}
             if not box_file["name"].endswith(".ai"):
-                box_download(box_file)
+                box_download(box_file, client)
     except BoxAPIError:
         print(f"Not a valid folder link")
     try:
@@ -102,15 +101,14 @@ def box_f_id(url_link):
         for folder2 in mini_folder2:
             box_file = {"name": folder2.name, "id": folder2.id}
             if not box_file["name"].endswith(".ai"):
-                box_download(box_file)
+                box_download(box_file, client)
     except BoxAPIError as d:
         print(f"Not s valid shared link \n{d}")
 
 # Downloads the box file and saves it to the donwload folder
-def box_download(url):
+def box_download(url, client):
     file_name = url["name"]
     file_id = url["id"]
-    client = box_auth()
     try:
         file = client.downloads.download_file(file_id=file_id)
         dwn_pt = "C:/Users/Public/Downloads/"
@@ -131,6 +129,38 @@ def air_table():
     a.Notes = "Uploaded via script"
     a.save()
     a.Attachments.upload("out.pdf",content=j, content_type="application/pdf")
+    
+def mon_2(project):
+    acc = monday_key()
+    url, headers = acc
+
+    query2 = """query getItemsAndSubitems {
+                boards(ids: 3066531206) {
+                items_page {
+                items {
+                column_values (ids: ["text", "text2"]) {
+                text
+                }
+                name
+                subitems {
+                name
+                column_values (ids: ["text", "link0"]) {
+                text
+                }
+                }
+                }
+                }
+                }
+                }"""
+    data2 = {'query' : query2}
+    r2 = requests.post(url=url, json=data2, headers=headers)
+    items = r2.json()
+    for t in items["data"]["boards"]:
+        for j in t["items_page"]["items"]:
+            for l in j["column_values"]:
+                desc = l.get("text")
+                if desc in project:
+                    print(desc)
 
 def main():
     while True:
@@ -140,8 +170,9 @@ def main():
             if second == "q":
                 break
             t = mon_columns(first, second)
+            client = box_auth()
             url = b_link(t)
-            box_f_id(url)
+            box_f_id(url, client)
         # air_table()
                 
 
