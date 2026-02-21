@@ -44,6 +44,9 @@ def mon_columns(project, sub_item):
                 items_page {
                 items {
                 name
+                column_values {
+                text
+                }
                 subitems {
                 name
                 column_values (ids: ["text", "link0"]) {
@@ -68,9 +71,30 @@ def mon_columns(project, sub_item):
                         all_items = {"name" : name2, "subitems" : sub2, "links" : txt2}
                         return all_items
 
-def b_link(t):
-    link = t['links']
+# gets the link alone
+def b_link(links):
+    if not links:
+        print("no link found")
+        return None
+    link = links['links']
     return link
+
+# Separates the item number and item name
+def b_item_d(desc):
+    if not desc:
+        print("no name")
+        return None
+    
+    item_desc = desc["name"]
+    
+    # Unpacking tuple directly
+    item_num, _, name = item_desc.partition("_")
+
+    if not name:
+        print("no partion needed")
+        return item_desc
+    
+    return name, item_num
 
 # Authentication for box
 def box_auth():
@@ -116,52 +140,25 @@ def box_download(url, client):
         convert = file.read()
         with open(f"{full_pt}", "wb") as f:
             f.write(convert)
-        return file_name, file_id, full_pt
+            air_table(file_name, full_pt)
     except BoxAPIError as e:
         print(f"not found {e}")
 
 
-def air_table():
-    with open("output.pdf", 'rb') as f:
-        j = f.read()
+def air_table(file_name, path):
+    # with open(f"{path}", 'rb') as f:
+    #     j = f.read()
     a = Attach()
     a.Name = "Test"
     a.Notes = "Uploaded via script"
     a.save()
-    a.Attachments.upload("out.pdf",content=j, content_type="application/pdf")
     
-def mon_2(project):
-    acc = monday_key()
-    url, headers = acc
-
-    query2 = """query getItemsAndSubitems {
-                boards(ids: 3066531206) {
-                items_page {
-                items {
-                column_values (ids: ["text", "text2"]) {
-                text
-                }
-                name
-                subitems {
-                name
-                column_values (ids: ["text", "link0"]) {
-                text
-                }
-                }
-                }
-                }
-                }
-                }"""
-    data2 = {'query' : query2}
-    r2 = requests.post(url=url, json=data2, headers=headers)
-    items = r2.json()
-    for t in items["data"]["boards"]:
-        for j in t["items_page"]["items"]:
-            for l in j["column_values"]:
-                desc = l.get("text")
-                if desc in project:
-                    print(desc)
-
+    for paths in path:
+        file_name = paths.split("/")[-1].split("\\")[-1]
+        with open(path, "rb") as f:
+            j = f.read()
+    a.Attachments.upload(f"{file_name}",content=j, content_type="application/pdf")
+    
 def main():
     while True:
         first = input("Project Name? ")
@@ -172,6 +169,7 @@ def main():
             t = mon_columns(first, second)
             client = box_auth()
             url = b_link(t)
+            b_item_d(t)
             box_f_id(url, client)
         # air_table()
                 

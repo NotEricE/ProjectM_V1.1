@@ -35,7 +35,7 @@ def rep(item):
     return item.get("name") or item.get("text")
 
 # Getting monday column info
-def mon_columns(project, sub_item):
+def mon_columns():
     acc = monday_key()
     url, headers = acc
 
@@ -44,10 +44,14 @@ def mon_columns(project, sub_item):
                 items_page {
                 items {
                 name
+                column_values (ids: ["text","text2"]) {
+                text
+                }
                 subitems {
                 name
-                column_values (ids: ["text", "link0"]) {
+                column_values (ids: ["link0"]) {
                 text
+                value
                 }
                 }
                 }
@@ -57,6 +61,7 @@ def mon_columns(project, sub_item):
     data2 = {'query' : query2}
     r2 = requests.post(url=url, json=data2, headers=headers)
     items = r2.json()
+    print(items)
 
 def air_table(file_name, path):
     # with open(f"{path}", 'rb') as f:
@@ -71,3 +76,9 @@ def air_table(file_name, path):
         with open(path, "rb") as f:
             j = f.read()
     a.Attachments.upload(f"{file_name}",content=j, content_type="application/pdf")
+
+def main():
+    mon_columns()
+
+if __name__ == "__main__":
+    main()
