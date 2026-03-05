@@ -1,8 +1,7 @@
 from box_sdk_gen import BoxClient, BoxJWTAuth, JWTConfig, BoxAPIError
 from pyairtable import Api
 from pyairtable.orm import Model, fields as F
-from datetime import date
-import json
+from pathlib import Path
 import requests
 import yaml
 
@@ -86,7 +85,7 @@ def b_item_d(desc):
         return None
     
     item_desc = desc["name"]
-    
+
     # Unpacking tuple directly
     item_num, _, name = item_desc.partition("_")
 
@@ -117,6 +116,7 @@ def box_f_id(url_link, client):
                 box_download(box_file, client)
     except BoxAPIError:
         print(f"Not a valid folder link")
+        
     try:
         i = client.shared_links_folders.find_folder_for_shared_link("".join([ f"shared_link={url}" ]))
         ito = i.id
@@ -140,25 +140,37 @@ def box_download(url, client):
         convert = file.read()
         with open(f"{full_pt}", "wb") as f:
             f.write(convert)
-            air_table(file_name, full_pt)
+            air_table_att(file_name, full_pt)
+        air_table_info(file_name)
     except BoxAPIError as e:
         print(f"not found {e}")
 
-
-def air_table(file_name, path):
-    # with open(f"{path}", 'rb') as f:
-    #     j = f.read()
+def air_table_info(c):
     a = Attach()
-    a.Name = "Test"
+    a.Name = f"{c}"
     a.Notes = "Uploaded via script"
     a.save()
-    
-    for paths in path:
-        file_name = paths.split("/")[-1].split("\\")[-1]
-        with open(path, "rb") as f:
-            j = f.read()
-    a.Attachments.upload(f"{file_name}",content=j, content_type="application/pdf")
-    
+
+def air_table_ci(name):
+    am = Attach.Meta()
+    api = Api(am.api_key)
+    table = api.table(base_id=am.base_id, table_name=am.table_name)
+    table_info = table.all(fields=["Name"])
+    for ti in table_info:
+        print(ti["id"], ti["fields"])
+
+def air_table_att(file_name, f_path):
+    air_table_ci(file_name)
+    # am = Attach.Meta()
+    # api = Api(am.api_key)
+    # table = api.table(base_id=am.base_id, table_name=am.table_name)
+    # table.all()
+    a = Attach()
+    a.save()
+    with open(f_path, "rb") as f:
+        content = f.read()
+    a.Attachments.upload(f"{file_name}",content=content, content_type="application/pdf")
+
 def main():
     while True:
         first = input("Project Name? ")
@@ -171,8 +183,6 @@ def main():
             url = b_link(t)
             b_item_d(t)
             box_f_id(url, client)
-        # air_table()
-                
 
 if __name__ == "__main__":
     try:
